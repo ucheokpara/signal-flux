@@ -1,0 +1,297 @@
+[
+    {
+        "name": "Community Announcements Publishing",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things.",
+        "average_handling_time": 1.95
+    },
+    {
+        "name": "Community Announcements Publishing Appeals",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things. When moderating appeals we need to pay attention to the feedback given to the creator and why they are not agreeing with your feedback.",
+        "average_handling_time": 14.44
+    },
+    {
+        "name": "Community Announcements Reports",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things. The \"reports\" mean that this is not the first time creators send their announcement, just that previously they had sent it with something not allowed by Epic",
+        "average_handling_time": 2.16
+    },
+    {
+        "name": "Community Details Reports",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things. The \"reports\" mean that this is not the first time creators send their announcement, just that previously they had sent it with something not allowed by Epic",
+        "average_handling_time": 8.25
+    },
+    {
+        "name": "Community Posts Appeals",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things.",
+        "average_handling_time": 4.1
+    },
+    {
+        "name": "Community Posts Reports",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things.",
+        "average_handling_time": 4.89
+    },
+    {
+        "name": "Delulu Text Reports",
+        "definition": "Reviews conversation between players over text in Delulu mode (Delulu mode: type of game play where player enters Solo and looks to create a or make allies with other players)",
+        "average_handling_time": 6.62
+    },
+    {
+        "name": "Delulu Voice Reports",
+        "definition": "Reviews conversation between players over voice in Delulu mode. In this case Moderators are asked to check the voice transcipt and only hear the voicetracks in case of doubt or clarification (Delulu mode: type of game play where player enters Solo and looks to create a or make allies with other players)",
+        "average_handling_time": 11.25
+    },
+    {
+        "name": "Epic Display Name Reports",
+        "definition": "Reviews Usernames used by players. Moderation checks if it falls within the guidelines set by our client.",
+        "average_handling_time": 1.34
+    },
+    {
+        "name": "Epic Games Store Reports",
+        "definition": "Queue where we moderate the presentation of games inside the Epic Game Store platform. When working on the reports queue it means that creators had previously uploaded their content but last time it had something not allowed by Epic.",
+        "average_handling_time": 6.3
+    },
+    {
+        "name": "Epic Games Store Submissions",
+        "definition": "Queue where we moderate the presentation of games inside the Epic Game Store platform",
+        "average_handling_time": 7.9
+    },
+    {
+        "name": "Fab Marketplace",
+        "definition": "Review FAB packages where 3D models, images and textures can be found ut also several links can be included.",
+        "average_handling_time": 2.63
+    },
+    {
+        "name": "Fab Ops - Appeals Product Category",
+        "definition": "Process for players to contest moderation actions taken against their account.",
+        "average_handling_time": 2.67
+    },
+    {
+        "name": "Fall Guys Creative (Single)",
+        "definition": "Queue where Fall Guys maps are reviewed within the game.",
+        "average_handling_time": 2.7
+    },
+    {
+        "name": "Fall Guys Creative Reports",
+        "definition": "Queue where Fall Guys maps are reviewed within the game.",
+        "average_handling_time": 3.06
+    },
+    {
+        "name": "Fall Guys Preview Image Reports",
+        "definition": "Review of assets/thumbnails for Fall Guys islands",
+        "average_handling_time": 0.43
+    },
+    {
+        "name": "Fall Guys Preview Images",
+        "definition": "Review of assets/thumbnails for Fall Guys islands",
+        "average_handling_time": 0.42
+    },
+    {
+        "name": "Fallback",
+        "definition": "General operational queue handling associated requests and inquiries.",
+        "average_handling_time": 2.9
+    },
+    {
+        "name": "FN Creative (Multi)",
+        "definition": "Queue where we review maps created by only Fortnite assets.",
+        "average_handling_time": 12.52
+    },
+    {
+        "name": "FN Creative/UEFN Reports",
+        "definition": "Queue where we review maps created by only Fortnite assets.",
+        "average_handling_time": 15.36
+    },
+    {
+        "name": "FN Creator Pages (Image)",
+        "definition": "Revie of Creators name, mail and socials.",
+        "average_handling_time": 0.62
+    },
+    {
+        "name": "FN Creator Pages (Reports)",
+        "definition": "Revie of Creators name, mail and socials.",
+        "average_handling_time": 0.85
+    },
+    {
+        "name": "FN Creator Pages (Text)",
+        "definition": "Revie of Creators name, mail and socials.",
+        "average_handling_time": 0.81
+    },
+    {
+        "name": "FN Entitlements Pre-Purchase Reports",
+        "definition": "Review of in game purchases/microtransactions within the creator\u00b4s map.",
+        "average_handling_time": 4.58
+    },
+    {
+        "name": "FN Fall Guys UGC Island",
+        "definition": "Review Fall Guys maps inside Fortnite created by the users.",
+        "average_handling_time": 12.73
+    },
+    {
+        "name": "FN Fall Guys UGC Island Reports",
+        "definition": "Review Fall Guys maps inside Fortnite created by the users.",
+        "average_handling_time": 12.67
+    },
+    {
+        "name": "FN HiVis: Creator Profiles",
+        "definition": "General operational queue handling associated requests and inquiries.",
+        "average_handling_time": 0.48
+    },
+    {
+        "name": "FN HiVis: FNC/UEFN Publishing",
+        "definition": "is High Visibility or Risky Creators trying to publish new content. We also get escalations from publishing queues as well based on these creators.",
+        "average_handling_time": 17.91
+    },
+    {
+        "name": "FN HiVis: FNC/UEFN Reports Rejects Double Review",
+        "definition": "General operational queue handling associated requests and inquiries.",
+        "average_handling_time": 20.5
+    },
+    {
+        "name": "FN HiVis: UEFN High Severity Assets",
+        "definition": "is any asset tagged with our more egregious badger tagging gets sent for our review (think Hate Speech, Sexual/adult etc).",
+        "average_handling_time": 3.35
+    },
+    {
+        "name": "FN KPDH Island",
+        "definition": "Queue where maps themed of the K-pop Demon Hunters are moderated",
+        "average_handling_time": 13.44
+    },
+    {
+        "name": "FN KPDH Island Reports",
+        "definition": "Queue where maps themed of the K-pop Demon Hunters are moderated",
+        "average_handling_time": 13.46
+    },
+    {
+        "name": "FN LEGO Brick Life Reports",
+        "definition": "Review of reports within the Lego Brick Life game mode (open world map)",
+        "average_handling_time": 9.55
+    },
+    {
+        "name": "FN LEGO Odyssey Reports",
+        "definition": "Review of reports within the Lego Odyssey game mode (open world map)",
+        "average_handling_time": 4.44
+    },
+    {
+        "name": "FN LEGO UGC Island",
+        "definition": "Review of maps based on the LEGO universe",
+        "average_handling_time": 15.42
+    },
+    {
+        "name": "FN LEGO UGC Reports",
+        "definition": "Review of maps based on the LEGO universe",
+        "average_handling_time": 13.45
+    },
+    {
+        "name": "FN Sidekick Name Reports",
+        "definition": "Reviews Usernames given to sidekicks by players . Moderation checks if it falls within the guidelines set by our client.",
+        "average_handling_time": 1.47
+    },
+    {
+        "name": "FN Squid Game UGC Island",
+        "definition": "Queue where maps themed of the Squid Games are moderated",
+        "average_handling_time": 17.23
+    },
+    {
+        "name": "FN Squid Game UGC Island Reports",
+        "definition": "Queue where maps themed of the Squid Games are moderated",
+        "average_handling_time": 22.78
+    },
+    {
+        "name": "FN Text Chat Reports",
+        "definition": "Queue where we moderate up to 50 text messages between players in DMs or Group/Party Chat",
+        "average_handling_time": 6.26
+    },
+    {
+        "name": "FN TMNT UGC Island",
+        "definition": "Queue where maps themed of the Teenage Mutant Ninja Turtles are moderated",
+        "average_handling_time": 12.57
+    },
+    {
+        "name": "FN TMNT UGC Island Report Appeals",
+        "definition": "Queue where maps themed of the Teenage Mutant Ninja Turtles are moderated. In this queue creators can appeal for the violations tagged upon their maps.",
+        "average_handling_time": 10.87
+    },
+    {
+        "name": "FN TMNT UGC Island Reports",
+        "definition": "Queue where maps themed of the Teenage Mutant Ninja Turtles are moderated.",
+        "average_handling_time": 13.08
+    },
+    {
+        "name": "FN TWDU UGC Island",
+        "definition": "Queue where maps themed of the The Walking Dead Universe are moderated.",
+        "average_handling_time": 15.44
+    },
+    {
+        "name": "FN TWDU UGC Island Reports",
+        "definition": "Queue where maps themed of the The Walking Dead Universe are moderated.",
+        "average_handling_time": 13.64
+    },
+    {
+        "name": "FN UEFN (Multi)",
+        "definition": "Queue where maps with Unreal Engine are made by the community and moderated by us.",
+        "average_handling_time": 13.53
+    },
+    {
+        "name": "FN UEFN Asset Image Priority",
+        "definition": "Queue where images of assets applied inside Fortnite maps are moderated.",
+        "average_handling_time": 0.98
+    },
+    {
+        "name": "Marketplace Spam",
+        "definition": "We get spam report from the marketplaces (ArtStation, Sketchfab, EDC) and re moderate them.",
+        "average_handling_time": 2.42
+    },
+    {
+        "name": "RealityScan Appeals (URL)",
+        "definition": "Process for players to contest moderation actions taken against their account.",
+        "average_handling_time": 2.93
+    },
+    {
+        "name": "Rocket League Text Chat Illegal Content Reports",
+        "definition": "Text conversation among players where mods can tag message by message in an up to 50 messages conversation. These messages coming from the Rocket League game.",
+        "average_handling_time": 4.88
+    },
+    {
+        "name": "Rocket Racing Multi",
+        "definition": "Queue with the game mode of rocket racing, this is a car racing mode made by Fortnite.",
+        "average_handling_time": 10.87
+    },
+    {
+        "name": "Rocket Racing Reports",
+        "definition": "Queue with the game mode of rocket racing, this is a car racing mode made by Fortnite.",
+        "average_handling_time": 9.69
+    },
+    {
+        "name": "Sketchfab Appeals (URL)",
+        "definition": "Process for players to contest moderation actions taken against their account.",
+        "average_handling_time": 9.33
+    },
+    {
+        "name": "Sketchfab Reports (URL)",
+        "definition": "Reports made on the sketchfab platform by users",
+        "average_handling_time": 3.88
+    },
+    {
+        "name": "Social Overlay Appeals",
+        "definition": "Process for players to contest moderation actions taken against their account.",
+        "average_handling_time": 6.16
+    },
+    {
+        "name": "Social Overlay Reports",
+        "definition": "We get report from players in the Fortnite Ecosystem chat with friends in a Social Overlay",
+        "average_handling_time": 5.05
+    },
+    {
+        "name": "Sponsored Community Announcements Publishing",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things.",
+        "average_handling_time": 1.35
+    },
+    {
+        "name": "Sponsored Community Announcements Reports",
+        "definition": "Review the latest updates fortnite developers (before called Fortnite Creators) post for their community to be updated on upcoming new things, the \"reports\" mean that this is not the first time creators send their announcement, just that previously they had sent it with something not allowed by Epic.",
+        "average_handling_time": 3.79
+    },
+    {
+        "name": "Voice Chat Reports",
+        "definition": "Queue where audios of 5 minute tops are heard. Said audios are presented in voice channels whose number of channels vary from report to report.",
+        "average_handling_time": 11.33
+    }
+]

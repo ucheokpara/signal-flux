@@ -27,7 +27,13 @@ dist-ssr
 *.db
 *.csv
 *.jsonl
-data/
+data/*
+!data/internal/
+data/internal/*
+!data/internal/*.json
+!data/external/
+data/external/*
+!data/external/*.json
 engine_output.json
 historical_states.json
 
