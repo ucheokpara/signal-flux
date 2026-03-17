@@ -1,0 +1,58 @@
+name: Deploy Signal Flux to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main  # Triggers the pipeline automatically when you push to the main branch
+
+env:
+  PROJECT_ID: gen-lang-client-0217572632          # TODO: Replace with your Google Cloud Project ID
+  REGION: us-central1                      # TODO: Replace with your preferred GCP Region
+  SERVICE_NAME: signal-flux-engine         # the name of your Cloud Run service
+  GAR_REPO: signal-flux-repo               # The name of your Google Artifact Registry repository
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 1. Authenticate to Google Cloud using a Service Account Key stored in GitHub Secrets
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      # 2. Setup the Google Cloud SDK
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 3. Authorize Docker to push to Google Artifact Registry
+      - name: Docker Auth
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # 4. Build the Headless Chrome Docker Image & Push it to GCP
+      - name: Build and Push Container
+        run: |-
+          IMAGE_PATH="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.SERVICE_NAME }}"
+          docker build -t "$IMAGE_PATH:${{ github.sha }}" .
+          docker push "$IMAGE_PATH:${{ github.sha }}"
+
+      # 5. Deploy the freshly built container to Cloud Run
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          # Configure Memory & Port mappings for Vite inside the headless chromium docker image
+          flags: '--allow-unauthenticated --port=3000 --memory=2048Mi --cpu=2'
+
+      # 6. Output the successful deployment endpoint
+      - name: Deployment Endpoint
+        run: echo "Deployed Service URL -> ${{ steps.deploy.outputs.url }}"

@@ -1,0 +1,5 @@
+{
+  "name": "Signal Flux: SSDF Telemetry Engine",
+  "description": "A high-fidelity monitoring dashboard for comparing External Signals (Twitch, Discord, Streams Charts) against Internal Signals (Client Telemetry).",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,11 @@
+const fs = require('fs');
+const d = JSON.parse(fs.readFileSync('engine_output.json'));
+const mdStr = d.markdownReport;
+const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/gi;
+const matches = [...mdStr.matchAll(mermaidRegex)];
+const code = matches[1][1].trim();
+console.log('Testing code:', code);
+const start = Date.now();
+const res = code.replace(/([A-Za-z0-9_]+)(\[\[|\[\(|\[|\(\(|\(|>|\{\{|_{\{|{)([^"\[\]\(\)\{\}\n]+?)(\]\]|\)\]|\]|\)\)|\)|\]\}|\}\}|})/g, 'test');
+console.log('Result length:', res.length);
+console.log('Time taken:', Date.now() - start);
