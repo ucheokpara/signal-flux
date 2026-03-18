@@ -7,6 +7,14 @@ This document serves as a persistent memory bank for all user requests, bug repo
 
 ## 📅 Session: March 2026 (Recent Resolves)
 
+### 0. GCP Enterprise Architecture Migration (Storage & Firestore Memory)
+- **Request:** Migrate the application from localized disk tracking to scalable Google Cloud Enterprise architecture (Phase 2, Phase 3, Phase 4). Enable persistent chat memory so users can restart/refresh without state loss.
+- **Resolution:**
+  - Diagnosed and resolved GCP Project context errors (`gcloud config set project gen-lang-client-0217572632`) to correctly provision GCS buckets.
+  - Refactored Vite `/api/generate-pdf` and `/api/archive-zip` endpoints to intercept Buffer/Zip streams and pipe them natively into the `signal-flux-generated-reports` public bucket using `@google-cloud/storage`.
+  - Implemented `chatLogService.ts` utilizing Firebase Firestore (`setDoc`, `getDoc`) to intercept and silently auto-save `AnalysisModuleView.tsx` conversation arrays, charts, and configurations dynamically mapped to the Google Identity User UID.
+  - Wired React component mount hooks to aggressively hydrate and pre-load historical chat context before displaying the default Agent Flux greeting, allowing seamless cross-device session continuation.
+
 ### 1. PDF Generation Loop & Regression Guard
 - **Request:** The agent repeatedly asked to generate a PDF without fulfilling the request. Fixing one issue caused regressions elsewhere ("Fix A, Break B").
 - **Resolution:** 

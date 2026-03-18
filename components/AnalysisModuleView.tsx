@@ -472,16 +472,44 @@ const AnalysisModuleView: React.FC<AnalysisModuleViewProps> = ({ mode, config, a
     let initControls: Record<number, string> = {};
     meta.controls.forEach((c, i) => initControls[i] = c.default);
     setControlVals(initControls);
+
+    setIsProcessing(true);
     
-    // Initial greeting, explaining API usage briefly.
-    const sourceString = config.source ? config.source.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'twitch';
-    const greeting = `Greetings, ${fullName}! I am Agent Flux. I operate simultaneously across **${sourceString}_historical.db** and **epic_games_historical.db**.
-    
+    import('../services/chatLogService').then(async ({ loadChatLog }) => {
+        const historyData = await loadChatLog(authUser.uid, mode);
+        if (historyData && historyData.messages && historyData.messages.length > 0) {
+            setMessages(historyData.messages);
+            if (historyData.hasStarted) setHasStarted(historyData.hasStarted);
+            if (historyData.realData) setRealData(historyData.realData);
+            if (historyData.insights) setInsights(historyData.insights);
+            if (historyData.plotImageBase64) plotImageBase64.current = historyData.plotImageBase64;
+            if (historyData.fullReport) setFullReport(historyData.fullReport);
+        } else {
+            // Initial greeting
+            const sourceString = config.source ? config.source.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'twitch';
+            const greeting = `Greetings, ${fullName}! I am Agent Flux. I operate simultaneously across **${sourceString}_historical.db** and **epic_games_historical.db**.
+            
 I am currently loaded with the structural logic for **${meta.title}**. Adjust the parameters on the left and hit "**Execute Diagnostic Run**" when you are ready to begin the step-by-step sequence.`;
-    
-    setMessages([{ id: Date.now().toString(), role: 'flux', type: 'text', content: greeting }]);
-    setIsProcessing(false);
+            
+            setMessages([{ id: Date.now().toString(), role: 'flux', type: 'text', content: greeting }]);
+        }
+        setIsProcessing(false);
+    });
   }, [mode, meta.title]);
+
+  // Sync to Firestore when core state changes
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (messages.length === 1 && messages[0].content.includes('Greetings,') && !hasStarted) return;
+    
+    import('../services/chatLogService').then(({ saveChatLog }) => {
+        saveChatLog(
+             authUser.uid, mode, messages, config, 
+             hasStarted, realData, insights, 
+             plotImageBase64.current, fullReport
+        );
+    });
+  }, [messages, hasStarted, realData, insights, fullReport]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1151,7 +1179,7 @@ The very first section inside your [START_REPORT_MARKDOWN] block MUST identicall
         setGeneratedDocs(prev => [...prev, {
             title: `${getShortTitle(meta.title)} Report${sessionLabel}`,
             filename: result.filename,
-            url: `/docs/flux_reports/${result.filename}`,
+            url: result.url || `/docs/flux_reports/${result.filename}`,
             time: new Date().toLocaleTimeString(),
             type: 'PDF',
             genTime: genTime

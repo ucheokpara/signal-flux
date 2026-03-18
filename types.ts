@@ -1,4 +1,5 @@
 export interface AuthenticatedUser {
+  uid: string;
   title: string;
   firstName: string;
   lastName: string;

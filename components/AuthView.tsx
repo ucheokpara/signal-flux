@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { ShieldAlert, ShieldCheck, Mail, User, Briefcase, Lock } from 'lucide-react';
 import { AuthenticatedUser } from '../types';
+import { auth, db } from '../services/firebaseConfig';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthViewProps {
   onLogin: (user: AuthenticatedUser) => void;
@@ -17,7 +20,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -26,53 +29,55 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
       return;
     }
     
-    const usersRaw = localStorage.getItem('flux_users_db');
-    const db = usersRaw ? JSON.parse(usersRaw) : [];
+    try {
+      if (isLoginMode) {
+        // Login Flow: Google Identity Platform
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        // Fetch assigned Identity constraints from Cloud Firestore
+        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+        
+        if (userDoc.exists()) {
+          const userContext = userDoc.data() as AuthenticatedUser;
+          onLogin(userContext);
+        } else {
+          // Emergency Fallback
+          onLogin({ email: userCredential.user.email, firstName: 'Authorized', lastName: 'User', title: '', position: 'Analyst' } as AuthenticatedUser);
+        }
 
-    if (isLoginMode) {
-      // Login Flow
-      const user = db.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-      
-      if (!user) {
-        setError('Invalid email or password. Please try again or create a profile.');
-        return;
+      } else {
+        // Create Profile Flow: Google Identity Platform
+        if (!firstName || !lastName || !position) {
+          setError('All identity fields are required to create a profile.');
+          return;
+        }
+        
+        // Register the cryptographic token map
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        const userContext = {
+          title,
+          firstName,
+          lastName,
+          position,
+          email,
+          uid: userCredential.user.uid
+        };
+        
+        // Save the contextual schema strictly to the secure Cloud Firestore table
+        await setDoc(doc(db, 'users', userCredential.user.uid), userContext);
+        
+        onLogin(userContext as AuthenticatedUser);
       }
-      
-      const { password: _, ...userContext } = user;
-      localStorage.setItem('flux_auth_user', JSON.stringify(userContext));
-      onLogin(userContext);
-
-    } else {
-      // Create Profile Flow
-      if (!firstName || !lastName || !position) {
-        setError('All identity fields are required to create a profile.');
-        return;
+    } catch (err: any) {
+      console.error("SSDF Identity Sync Error: ", err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered. Please sign in or reset your keys.');
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setError('Invalid identity credentials mapped. Please try again.');
+      } else {
+        setError(err.message || 'A fatal mapping error occurred during authentication.');
       }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setError('Please enter a valid email address.');
-        return;
-      }
-      if (db.some((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
-        setError('This email is already registered. Please sign in.');
-        return;
-      }
-      
-      const newUser = {
-         title,
-         firstName,
-         lastName,
-         position,
-         email,
-         password
-      };
-      
-      db.push(newUser);
-      localStorage.setItem('flux_users_db', JSON.stringify(db));
-      
-      const { password: _, ...userContext } = newUser;
-      localStorage.setItem('flux_auth_user', JSON.stringify(userContext));
-      onLogin(userContext as AuthenticatedUser);
     }
   };
 

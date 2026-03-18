@@ -17,6 +17,9 @@ import { fetchTwitchFortniteStats, getTwitchAccessToken } from './services/twitc
 import { fetchYouTubeGamingStats } from './services/youtubeService';
 import { uploadLogsToGCS } from './services/gcsService';
 import ErrorBoundary from './components/ErrorBoundary';
+import { auth, db } from './services/firebaseConfig';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const STORAGE_KEY = 'signal_flux_config_v2';
 
@@ -77,10 +80,37 @@ const BETA = 0.8;
 const GAMMA = 1.5; 
 
 function App() {
-  const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(() => {
-    const saved = localStorage.getItem('flux_auth_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth) {
+       // Firebase is disabled/missing API key, so inject a local bypass user immediately
+       setAuthUser({ uid: 'offline_mode', email: 'local@device.com', firstName: 'Local', lastName: 'Analyst', title: '', position: 'Offline' } as AuthenticatedUser);
+       setAuthLoading(false);
+       return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setAuthUser({ ...userDoc.data(), uid: user.uid } as AuthenticatedUser);
+          } else {
+            setAuthUser({ uid: user.uid, email: user.email || '', firstName: 'Authorized', lastName: 'User', title: '', position: 'Analyst' } as AuthenticatedUser);
+          }
+        } catch (err) {
+          console.error("Firestore Identity check fault:", err);
+          setAuthUser({ uid: user.uid, email: user.email || '', firstName: 'Emergency', lastName: 'Fallback', title: '', position: 'Analyst' } as AuthenticatedUser);
+        }
+      } else {
+        setAuthUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
   
   const [currentView, setCurrentView] = useState<AppView>('dashboard');
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -460,6 +490,17 @@ function App() {
 
   // All views are rendered persistently and toggled via CSS display to preserve state during navigation
 
+  if (authLoading) {
+     return (
+       <div className="h-screen bg-[#020617] flex items-center justify-center relative">
+         <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 bg-grid opacity-50"></div>
+         <div className="text-cyan-400 font-black text-sm uppercase tracking-[0.3em] animate-pulse z-10 glass-shine px-6 py-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 shadow-2xl shadow-cyan-500/10">
+           Verifying Identity Vault...
+         </div>
+       </div>
+     );
+  }
+
   if (!authUser) {
      return <AuthView onLogin={setAuthUser} />;
   }
@@ -478,8 +519,10 @@ function App() {
         companyGames={COMPANY_GAMES}
         isExtSimulating={logs.length > 0 ? Boolean(logs[logs.length - 1].is_simulation) : false}
         authUser={authUser}
-        onLogout={() => {
-           localStorage.removeItem('flux_auth_user');
+        onLogout={async () => {
+           if (auth) {
+             await signOut(auth);
+           }
            setAuthUser(null);
         }}
       />

@@ -35,6 +35,16 @@ jobs:
         run: |-
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
+      # 3.5. Inject Firebase Secrets into .env for Vite Build
+      - name: Inject Firebase Secrets
+        run: |
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
+          echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
+
       # 4. Build the Headless Chrome Docker Image & Push it to GCP
       - name: Build and Push Container
         run: |-
@@ -51,7 +61,8 @@ jobs:
           region: ${{ env.REGION }}
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
           # Configure Memory & Port mappings for Vite inside the headless chromium docker image
-          flags: '--allow-unauthenticated --port=3000 --memory=2048Mi --cpu=2'
+          # Enable Gen2 execution environment and mount Cloud Storage FUSE volume
+          flags: '--allow-unauthenticated --port=3000 --memory=2048Mi --cpu=2 --execution-environment=gen2 --add-volume=name=gcs,type=cloud-storage,bucket=signal-flux-telemetry-archive --add-volume-mount=volume=gcs,mount-path=/usr/src/app/data'
 
       # 6. Output the successful deployment endpoint
       - name: Deployment Endpoint

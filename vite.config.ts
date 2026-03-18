@@ -12,78 +12,28 @@ const csvPlugin = () => ({
         req.on("data", (chunk: any) => {
           body += chunk.toString();
         });
-        req.on("end", () => {
+        req.on("end", async () => {
           try {
             const data = JSON.parse(body);
-
-            // Expected required fields for folder/file structure
-            const sourceStr = (data.source || 'Unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
             
-            // Extract the year for the filename
-            let yearStr = new Date().getFullYear().toString();
-            if (data.timestamp) {
-              const d = new Date(data.timestamp);
-              if (!isNaN(d.valueOf())) {
-                yearStr = d.getFullYear().toString();
-              }
-            }
+            // Execute Enterprise BigQuery Migration
+            const { BigQuery } = await import('@google-cloud/bigquery');
+            const bigquery = new BigQuery();
+            const dataset = bigquery.dataset('signal_flux_telemetry');
+            const table = dataset.table('live_metrics');
             
-            const baseDir = path.resolve(__dirname, 'data');
-            const filePath = path.join(baseDir, `${sourceStr.toLowerCase()}_${yearStr}.csv`);
-
-            // Ensure directories exist
-            if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir);
-
-            // Create CSV row
-            // We'll define a standard header for all logs based on LogEntry type
-            const headers = [
-              "timestamp",
-              "game_name",
-              "company",
-              "source",
-              "sample_size",
-              "total_metrics",
-              "peak_metric_count",
-              "v_total",
-              "top_channel_title",
-              "S",
-              "CS",
-              "AS",
-              "SSM",
-              "D",
-              "is_simulation",
-              "cycle_signals",
-              "cycle_viewer_minutes",
-            ];
-
-            const rowStr = headers
-              .map((header) => {
-                const val = data[header];
-                if (val === null || val === undefined) return "";
-                // Simple escape for string values that might contain commas
-                if (typeof val === "string" && val.includes(",")) {
-                  return `"${val}"`;
-                }
-                return val;
-              })
-              .join(",");
-
-            // Write header if file doesn't exist
-            let fileContent = "";
-            if (!fs.existsSync(filePath)) {
-              fileContent += headers.join(",") + "\n";
-            }
-            fileContent += rowStr + "\n";
-
-            fs.appendFileSync(filePath, fileContent);
+            if (data.timestamp) data.timestamp = new Date(data.timestamp).toISOString();
+            if (data.D) data.D = parseFloat(data.D) || 0;
+            
+            await table.insert([data]);
 
             res.statusCode = 200;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ success: true, message: "CSV updated" }));
+            res.end(JSON.stringify({ success: true, message: "Streamed exactly to BigQuery" }));
           } catch (error) {
-            console.error("Error saving CSV:", error);
+            console.error("Error streaming to BigQuery:", error);
             res.statusCode = 500;
-            res.end(JSON.stringify({ error: "Failed to process CSV write" }));
+            res.end(JSON.stringify({ error: "Failed to stream to BigQuery" }));
           }
         });
       } else if (req.url === "/api/save-raw" && req.method === "POST") {
@@ -91,39 +41,28 @@ const csvPlugin = () => ({
         req.on("data", (chunk: any) => {
           body += chunk.toString();
         });
-        req.on("end", () => {
+        req.on("end", async () => {
           try {
             const data = JSON.parse(body);
 
-            // Need source and timestamp
-            const sourceStr = (data.source || 'Unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const { BigQuery } = await import('@google-cloud/bigquery');
+            const bigquery = new BigQuery();
             
-            let yearStr = new Date().getFullYear().toString();
-            if (data.timestamp) {
-              const d = new Date(data.timestamp);
-              if (!isNaN(d.valueOf())) {
-                yearStr = d.getFullYear().toString();
-              }
-            }
-
-            const baseDir = path.resolve(__dirname, 'data');
-            const sourceDir = path.join(baseDir, sourceStr);
-            const filePath = path.join(sourceDir, `raw_${yearStr}.jsonl`);
-
-            // Ensure directories exist
-            if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir);
-            if (!fs.existsSync(sourceDir)) fs.mkdirSync(sourceDir);
-
-            // Write JSON line
-            fs.appendFileSync(filePath, JSON.stringify(data) + '\n');
+            const row = {
+               source: data.source || 'Unknown',
+               timestamp: data.timestamp ? new Date(data.timestamp).toISOString() : new Date().toISOString(),
+               payload: JSON.stringify(data.data || {})
+            };
+            
+            await bigquery.dataset('signal_flux_telemetry').table('raw_ingress').insert([row]);
 
             res.statusCode = 200;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ success: true, message: "Raw JSON appended" }));
+            res.end(JSON.stringify({ success: true, message: "Raw JSON streamed to BigQuery" }));
           } catch (error) {
-            console.error("Error saving raw JSON:", error);
+            console.error("Error streaming raw JSON to BigQuery:", error);
             res.statusCode = 500;
-            res.end(JSON.stringify({ error: "Failed to process raw JSON write" }));
+            res.end(JSON.stringify({ error: "Failed to process BQ raw write" }));
           }
         });
       } else if (req.url === "/api/env" && req.method === "GET") {
@@ -639,18 +578,34 @@ const csvPlugin = () => ({
                fs.writeFileSync(path.join(reportsDir, mdFilename), data.markdown);
                
                const zipFilename = data.filename + '.zip';
-               const zipPath = path.join(reportsDir, zipFilename);
                
-               const output = fs.createWriteStream(zipPath);
-               const archive = archiver('zip', { zlib: { level: 9 } });
+               const { Storage } = await import('@google-cloud/storage');
+               const storage = new Storage();
+               const bucketName = 'signal-flux-generated-reports';
+               const bucket = storage.bucket(bucketName);
+               const zipFile = bucket.file(zipFilename);
                
-               output.on('close', () => {
-                   res.statusCode = 200;
-                   res.setHeader("Content-Type", "application/json");
-                   res.end(JSON.stringify({ zipFile: zipFilename, zipUrl: `/docs/flux_reports/${zipFilename}` }));
+               const gcsStream = zipFile.createWriteStream({
+                   resumable: false,
+                   contentType: 'application/zip'
                });
                
-               archive.pipe(output);
+               const archive = archiver('zip', { zlib: { level: 9 } });
+               
+               gcsStream.on('finish', () => {
+                   const publicUrl = `https://storage.googleapis.com/${bucketName}/${zipFilename}`;
+                   res.statusCode = 200;
+                   res.setHeader("Content-Type", "application/json");
+                   res.end(JSON.stringify({ zipFile: zipFilename, zipUrl: publicUrl }));
+               });
+               
+               gcsStream.on('error', (err: any) => {
+                   console.error("GCS Upload Error:", err);
+                   res.statusCode = 500;
+                   res.end(JSON.stringify({ error: err.message }));
+               });
+               
+               archive.pipe(gcsStream);
                archive.append(data.markdown, { name: mdFilename });
                
                if (data.supports && data.supports.length > 0) {
@@ -823,9 +778,16 @@ const csvPlugin = () => ({
                 
                 fs.writeFileSync(path.join(reportsDir, filename), pdfBuffer);
                 
+                const { Storage } = await import('@google-cloud/storage');
+                const storage = new Storage();
+                const bucketName = 'signal-flux-generated-reports';
+                const file = storage.bucket(bucketName).file(filename);
+                await file.save(pdfBuffer, { contentType: 'application/pdf' });
+                const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+
                 res.statusCode = 200;
                 res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify({ success: true, filename: filename }));
+                res.end(JSON.stringify({ success: true, filename: filename, url: publicUrl }));
             } finally {
                 if (browser) await browser.close();
             }

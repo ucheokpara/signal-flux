@@ -86,16 +86,36 @@ class SSDFIngestor:
             })
         return {"data": mock_data}
 
-    def export_ingress_csv(self, data_dict):
-        fields = ["id", "user_id", "user_login", "game_id", "game_name", "title", "tags", "language", "is_mature", "viewer_count", "started_at", "source", "timestamp"]
-        with open(self.output_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fields)
-            writer.writeheader()
-            for streamer, payload in data_dict.items():
-                for record in payload.get('data', []):
-                    if isinstance(record.get('tags'), list): record['tags'] = "|".join(record['tags'])
-                    writer.writerow({k: record.get(k, "") for k in fields})
-        print(f"[v] UNIFIED INGRESS COMPLETE: Saved to {self.output_file}")
+    def export_ingress_bigquery(self, data_dict):
+        try:
+            from google.cloud import bigquery
+        except ImportError:
+            print("[!] FATAL: google-cloud-bigquery package is missing. Please install it.")
+            return
+
+        client = bigquery.Client()
+        dataset_id = "signal_flux_telemetry"
+        table_id = "external_streams"
+        table_ref = f"{client.project}.{dataset_id}.{table_id}"
+        
+        rows_to_insert = []
+        for streamer, payload in data_dict.items():
+            for record in payload.get('data', []):
+                if isinstance(record.get('tags'), list): 
+                    record['tags'] = "|".join(record['tags'])
+                rows_to_insert.append(record)
+                
+        if not rows_to_insert:
+            print("[v] No records generated for ingestion.")
+            return
+
+        print(f"[>] Streaming {len(rows_to_insert)} records to BigQuery: {dataset_id}.{table_id}...")
+        errors = client.insert_rows_json(table_ref, rows_to_insert)
+        
+        if not errors:
+            print("[v] UNIFIED INGRESS COMPLETE: Successfully streamed to BigQuery")
+        else:
+            print(f"[!] ENCOUNTERED ERRORS DURING BIGQUERY STREAMING: {errors}")
 
 def main():
     ingestor = SSDFIngestor()
@@ -103,7 +123,7 @@ def main():
         "Ninja": ingestor._generate_sim_json("Ninja", "Fortnite"),
         "Squishy": ingestor._generate_sim_json("SquishyMuffinz", "Rocket League")
     }
-    ingestor.export_ingress_csv(results)
+    ingestor.export_ingress_bigquery(results)
 
 if __name__ == "__main__":
     main()
