@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import SystemCoreView from './components/SystemCoreView';
 import DashboardLiveView from './components/DashboardLiveView';
 import TelemetryLiveView from './components/TelemetryLiveView';
+import AdminView from './components/AdminView';
 import AnalysisModuleView from './components/AnalysisModuleView';
 import QueryEditorView from './components/QueryEditorView';
 import DataScopeView from './components/DataScopeView';
@@ -19,7 +20,8 @@ import { uploadLogsToGCS } from './services/gcsService';
 import ErrorBoundary from './components/ErrorBoundary';
 import { auth, db } from './services/firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { logAuditEvent } from './services/auditTrackingService';
 
 const STORAGE_KEY = 'signal_flux_config_v2';
 
@@ -86,7 +88,9 @@ function App() {
   useEffect(() => {
     if (!auth) {
        // Firebase is disabled/missing API key, so inject a local bypass user immediately
-       setAuthUser({ uid: 'offline_mode', email: 'local@device.com', firstName: 'Local', lastName: 'Analyst', title: '', position: 'Offline' } as AuthenticatedUser);
+       const offlineUser = { uid: 'offline_mode', email: 'local@device.com', firstName: 'Local', lastName: 'Analyst', title: 'System Offline', position: 'Administrator', role: 'admin' } as AuthenticatedUser;
+       setAuthUser(offlineUser);
+       logAuditEvent(offlineUser, 'LOGIN');
        setAuthLoading(false);
        return;
     }
@@ -95,14 +99,30 @@ function App() {
       if (user) {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
+          let finalUser: AuthenticatedUser;
+          
           if (userDoc.exists()) {
-            setAuthUser({ ...userDoc.data(), uid: user.uid } as AuthenticatedUser);
+            finalUser = { ...userDoc.data(), uid: user.uid, role: userDoc.data()?.role || 'user' } as AuthenticatedUser;
           } else {
-            setAuthUser({ uid: user.uid, email: user.email || '', firstName: 'Authorized', lastName: 'User', title: '', position: 'Analyst' } as AuthenticatedUser);
+            // Auto-provision brand new user document in Firestore on first login
+            finalUser = { 
+              uid: user.uid, 
+              email: user.email || '', 
+              firstName: 'Authorized', 
+              lastName: 'User', 
+              title: '', 
+              position: 'Analyst', 
+              role: 'user' 
+            } as AuthenticatedUser;
+            await setDoc(doc(db, 'users', user.uid), finalUser).catch(console.error);
           }
+          
+          setAuthUser(finalUser);
+          logAuditEvent(finalUser, 'LOGIN');
+          
         } catch (err) {
           console.error("Firestore Identity check fault:", err);
-          setAuthUser({ uid: user.uid, email: user.email || '', firstName: 'Emergency', lastName: 'Fallback', title: '', position: 'Analyst' } as AuthenticatedUser);
+          setAuthUser({ uid: user.uid, email: user.email || '', firstName: 'Emergency', lastName: 'Fallback', title: '', position: 'Analyst', role: 'user' } as AuthenticatedUser);
         }
       } else {
         setAuthUser(null);
@@ -514,12 +534,16 @@ function App() {
       <Sidebar 
         config={config} 
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={(view) => {
+          setCurrentView(view);
+          if (authUser) logAuditEvent(authUser, 'USE_CASE_VIEWED', `Navigated to ${view}`);
+        }}
         onConfigChange={(updates) => setConfig(prev => ({ ...prev, ...updates }))}
         companyGames={COMPANY_GAMES}
         isExtSimulating={logs.length > 0 ? Boolean(logs[logs.length - 1].is_simulation) : false}
         authUser={authUser}
         onLogout={async () => {
+           if (authUser) logAuditEvent(authUser, 'LOGOUT');
            if (auth) {
              await signOut(auth);
            }
@@ -571,6 +595,9 @@ function App() {
           </div>
           <div style={{ display: currentView === 'analysis-redline' ? 'block' : 'none', height: '100%' }}>
             <AnalysisModuleView mode="analysis-redline" config={historicalConfig} authUser={authUser} />
+          </div>
+          <div style={{ display: currentView === 'admin' ? 'block' : 'none', height: '100%' }}>
+            {currentView === 'admin' && <AdminView authUser={authUser!} />}
           </div>
         </div>
       </main>

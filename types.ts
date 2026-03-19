@@ -5,6 +5,7 @@ export interface AuthenticatedUser {
   lastName: string;
   position: string;
   email: string;
+  role: 'admin' | 'user';
 }
 
 export interface LogEntry {
@@ -30,7 +31,7 @@ export interface LogEntry {
 
 export type GamingCompany = 'Epic Games' | 'Ubisoft' | 'EA' | 'Activision';
 export type DataSource = 'Twitch' | 'Discord' | 'YouTube Gaming' | 'Kick' | 'Facebook Gaming' | 'TikTok Live' | 'Streams Charts';
-export type AppView = 'dashboard' | 'telemetry' | 'settings' | 'ingestion' | 'historical-selection' | 'archived-telemetry' | 'batch-telemetry' | 'analysis-lag' | 'analysis-toxicity' | 'analysis-anomaly' | 'analysis-decay' | 'analysis-redline';
+export type AppView = 'dashboard' | 'telemetry' | 'settings' | 'ingestion' | 'historical-selection' | 'archived-telemetry' | 'batch-telemetry' | 'analysis-lag' | 'analysis-toxicity' | 'analysis-anomaly' | 'analysis-decay' | 'analysis-redline' | 'admin';
 
 export type AuthStatus = 'Disconnected' | 'Authorizing' | 'Cycling' | 'Connected' | 'Error';
 

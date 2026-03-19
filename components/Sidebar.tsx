@@ -202,6 +202,20 @@ const Sidebar: React.FC<SidebarProps> = ({
           currentView={currentView}
           onViewChange={onViewChange}
         />
+        {authUser.role === 'admin' && (
+          <>
+            <h2 className="text-[9px] font-black text-rose-500 uppercase tracking-[0.3em] mb-4 pl-4 pt-4 border-t border-rose-500/20">
+              Admin
+            </h2>
+            <NavItem
+              view="admin"
+              icon={ShieldCheck}
+              label="Audit & Agent Flux"
+              currentView={currentView}
+              onViewChange={onViewChange}
+            />
+          </>
+        )}
       </nav>
 
       {/* Footer Controls - Signal Monitor */}
