@@ -19,7 +19,8 @@ import {
   Clock,
   LineChart,
   TrendingDown,
-  LogOut
+  LogOut,
+  RotateCcw
 } from "lucide-react";
 
 interface SidebarProps {
@@ -273,6 +274,20 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Global Persistence Reset */}
+        <button 
+           onClick={() => {
+              if (window.confirm("Are you sure you want to reset the application state to factory defaults? This will erase all local configurations.")) {
+                  localStorage.clear();
+                  window.location.reload();
+              }
+           }}
+           title="Hard wipe local storage and reset to default bounds"
+           className="w-full flex items-center justify-center gap-2 py-3 mt-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400/80 hover:bg-rose-500/20 hover:text-rose-400 transition-all font-black uppercase tracking-widest text-[10px]"
+        >
+           <RotateCcw className="w-3.5 h-3.5" /> Factory Reset State
+        </button>
 
         {/* User Profile Badge */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 border border-white/5 group hover:border-white/10 transition-colors mt-2">

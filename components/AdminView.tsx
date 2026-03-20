@@ -24,10 +24,20 @@ const AdminView: React.FC<AdminViewProps> = ({ authUser }) => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isAgentThinking]);
 
+  // Support offline mode memory tracking
+  const [offlineLogs, setOfflineLogs] = useState<any[]>([]);
+
   useEffect(() => {
-    if (!db || authUser.role !== 'admin') {
+    if (authUser.role !== 'admin') {
       setLoading(false);
       return;
+    }
+
+    if (!db) {
+       // Offline mode - just use the local offlineLogs state
+       setLogs(offlineLogs);
+       setLoading(false);
+       return;
     }
 
     const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(150));
@@ -43,7 +53,7 @@ const AdminView: React.FC<AdminViewProps> = ({ authUser }) => {
     });
 
     return () => unsubscribe();
-  }, [authUser.role]);
+  }, [authUser.role, db, offlineLogs]);
 
   if (authUser.role !== 'admin') {
     return (
@@ -58,6 +68,12 @@ const AdminView: React.FC<AdminViewProps> = ({ authUser }) => {
 
   const handleElevateUser = async () => {
     if (!elevateEmail.trim()) return;
+    if (!db) {
+      alert("Elevation is mocked in Offline Mode. User elevated locally.");
+      setElevateEmail('');
+      return;
+    }
+    
     try {
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('email', '==', elevateEmail.trim()));
@@ -91,26 +107,42 @@ const AdminView: React.FC<AdminViewProps> = ({ authUser }) => {
       { email: 'm.kusanagi@section9.gov', action: 'USE_CASE_VIEWED', details: 'Navigated to settings core' },
     ];
 
+    const generatedLogs: any[] = [];
+    const now = Date.now();
+    for (let i = 0; i < 75; i++) {
+      const randomDaysAgo = Math.random() * 15;
+      const pastTimestamp = now - (randomDaysAgo * 24 * 60 * 60 * 1000);
+      const randUser = syntheticUsers[Math.floor(Math.random() * syntheticUsers.length)];
+      
+      const logData = {
+        id: `synthetic_${Math.floor(Math.random()*100000)}`,
+        userId: `uid_${Math.floor(Math.random()*1000)}`,
+        email: randUser.email,
+        firstName: randUser.email.split('@')[0],
+        lastName: 'Synthetic',
+        role: 'user',
+        action: randUser.action,
+        details: randUser.details,
+        timestamp: db ? Timestamp.fromMillis(pastTimestamp) : { toDate: () => new Date(pastTimestamp) }
+      };
+      generatedLogs.push(logData);
+    }
+    
+    // Sort descending by time
+    generatedLogs.sort((a,b) => b.timestamp.toDate().getTime() - a.timestamp.toDate().getTime());
+
+    if (!db) {
+       // Inject directly into offline memory state
+       setOfflineLogs(prev => [...generatedLogs, ...prev]);
+       setIsGenerating(false);
+       return;
+    }
+
     try {
       const auditRef = collection(db, 'audit_logs');
-      const now = Date.now();
-      
-      for (let i = 0; i < 75; i++) {
-        // Distribute over the last 15 days
-        const randomDaysAgo = Math.random() * 15;
-        const pastTimestamp = now - (randomDaysAgo * 24 * 60 * 60 * 1000);
-        const randUser = syntheticUsers[Math.floor(Math.random() * syntheticUsers.length)];
-        
-        await addDoc(auditRef, {
-          userId: `synthetic_${Math.floor(Math.random()*1000)}`,
-          email: randUser.email,
-          firstName: randUser.email.split('@')[0],
-          lastName: 'Synthetic',
-          role: 'user',
-          action: randUser.action,
-          details: randUser.details,
-          timestamp: Timestamp.fromMillis(pastTimestamp)
-        });
+      for (const log of generatedLogs) {
+        const { id, ...data } = log;
+        await addDoc(auditRef, data);
       }
     } catch (e) {
       console.error("Synthetic generation failed:", e);

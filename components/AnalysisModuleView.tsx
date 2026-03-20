@@ -620,8 +620,9 @@ I am currently loaded with the structural logic for **${meta.title}**. Adjust th
          
          setRealData(enginePayload.realData || []);
          setInsights(enginePayload.insights || null);
-         plotImageBase64.current = enginePayload.plotFilename ? `./${enginePayload.plotFilename}` : '';
-         setFullReport("");
+         plotImageBase64.current = enginePayload.plotFilename ? `./${enginePayload.plotFilename}` : (enginePayload.plotBase64 ? `data:image/png;base64,${enginePayload.plotBase64}` : '');
+         setFullReport(enginePayload.markdownReport || "");
+
          
          const d1 = new Date(config.startDate);
          const d2 = new Date(config.endDate);
@@ -952,25 +953,23 @@ The very first section inside your [START_REPORT_MARKDOWN] block MUST identicall
                     setMessages(prev => [...prev, { id: Date.now().toString() + 'rload', role: 'flux', type: 'text', content: `Compiling analytical findings into official report... please stand by.` }]);
                     
                     try {
-                        const hist = messages.map(m => ({ role: m.role, content: m.type === 'text' ? m.content : `[System rendered chart]` }));
-                        if (hist.length > 0 && hist[0].role !== 'user') hist.unshift({ role: 'user', content: "Acknowledge system." });
+                        let mdContent = fullReport;
                         
-                        // Force explicit system command so Anomaly engine properly constructs the markdown block
-                        const forcePrompt = "Generate the full Markdown report based on these findings. You MUST enclose the entire report inside [START_REPORT_MARKDOWN] and [END_REPORT_MARKDOWN] tags. You MUST output [SYSTEM_REPORT] exactly once at the very end of your response.";
-                        const reply = await agentFluxChat(hist, getSystemPrompt(), forcePrompt);
+                        // Fallback logic for old analytical engines missing native Python wrappers
+                        if (!mdContent || mdContent.length < 50) {
+                            const hist = messages.map(m => ({ role: m.role, content: m.type === 'text' ? m.content : `[System rendered chart]` }));
+                            if (hist.length > 0 && hist[0].role !== 'user') hist.unshift({ role: 'user', content: "Acknowledge system." });
+                            
+                            const forcePrompt = "Generate the full Markdown report based on these findings. You MUST enclose the entire report inside [START_REPORT_MARKDOWN] and [END_REPORT_MARKDOWN] tags. You MUST output [SYSTEM_REPORT] exactly once at the very end of your response.";
+                            const reply = await agentFluxChat(hist, getSystemPrompt(), forcePrompt);
+                            
+                            const parsed = await parseLLMTagsAndTrigger(reply);
+                            mdContent = parsed.mdContent || parsed.cleanText.replace(/\[SYSTEM_[A-Z_]+\]/g, '').trim();
+                        }
                         
-                        // Parse tags which updates UI elements, and then we physically save it
-                        const { mdContent, cleanText } = await parseLLMTagsAndTrigger(reply);
                         if (mdContent) {
                             setFullReport(mdContent);
                             await generateMDReport(mdContent, mdStartTime);
-                        } else {
-                            // Fallback if the engine failed to wrap the output in START/END tags
-                            const fallbackMd = cleanText.replace(/\[SYSTEM_[A-Z_]+\]/g, '').trim();
-                            if (fallbackMd.length > 100) {
-                                setFullReport(fallbackMd);
-                                await generateMDReport(fallbackMd, mdStartTime);
-                            }
                         }
                         
                         setMessages(prev => prev.filter(m => !m.id.endsWith('rload')));
@@ -1289,6 +1288,8 @@ The very first section inside your [START_REPORT_MARKDOWN] block MUST identicall
                       <a 
                           key={i} 
                           href={doc.url} 
+                          target="_blank"
+                          rel="noopener noreferrer"
                           download={doc.filename} 
                           onClick={(e) => handleDocDownload(e, doc)} 
                           className={`block p-4 ${doc.downloaded ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-slate-800/80 hover:bg-slate-700/80 border-white/10 hover:border-cyan-500/50'} border rounded-xl transition-all group relative`}

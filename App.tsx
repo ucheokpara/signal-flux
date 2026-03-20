@@ -132,7 +132,15 @@ function App() {
     return () => unsubscribe();
   }, []);
   
-  const [currentView, setCurrentView] = useState<AppView>('dashboard');
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    const saved = localStorage.getItem('signal_flux_current_view');
+    return (saved as AppView) || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('signal_flux_current_view', currentView);
+  }, [currentView]);
+
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const vTotalRef = useRef<Record<string, number>>({});
   const prevConcurrentRef = useRef<Record<string, number>>({}); 
@@ -142,15 +150,30 @@ function App() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [envData, setEnvData] = useState<EnvCredentials | null>(null);
 
-  const [historicalConfig, setHistoricalConfig] = useState({
-    startDate: new Date('2025-01-01T00:00:00-06:00'),
-    endDate: new Date('2025-06-30T00:00:00-06:00'),
-    channels: [] as string[],
-    tags: [] as string[],
-    queues: [] as string[],
-    company: 'Epic Games' as GamingCompany,
-    game: 'Fortnite'
+  const [historicalConfig, setHistoricalConfig] = useState(() => {
+    const saved = localStorage.getItem('signal_flux_hist_config');
+    if (saved) {
+       const parsed = JSON.parse(saved);
+       return {
+           ...parsed,
+           startDate: new Date(parsed.startDate),
+           endDate: new Date(parsed.endDate)
+       };
+    }
+    return {
+      startDate: new Date('2025-01-01T00:00:00-06:00'),
+      endDate: new Date('2025-06-30T00:00:00-06:00'),
+      channels: [] as string[],
+      tags: [] as string[],
+      queues: [] as string[],
+      company: 'Epic Games' as GamingCompany,
+      game: 'Fortnite'
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('signal_flux_hist_config', JSON.stringify(historicalConfig));
+  }, [historicalConfig]);
 
   const [archivedDisplayedData, setArchivedDisplayedData] = useState<any[]>([]);
 
